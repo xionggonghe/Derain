@@ -17,6 +17,7 @@ if __name__ == '__main__':
     save = torch.load("./result/model_best.pth", map_location=torch.device('cpu'))
     model = DerainNet().to(device)
     model.load_state_dict(save['state_dict'])
+    print(model)
     test_dir = "./dataset/rain_data_test_Light/"
     inp_fileList, tar_fileList = DataLoader_Test(test_dir)
     SSIM_loss = SSIM()

@@ -198,6 +198,30 @@ class DerainNet(nn.Module):
         x = self.tail(x)
         x = torch.tanh(x)
         return x
+
+    def feature_extract(self, x):
+        feature = []
+        x = self.head(x)
+        feature.append(x)
+        xi = x
+
+        res = []
+        for i in range(self.num_blocks):
+            x = self.enc['enc{}'.format(i)](x)
+            feature.append(x)
+            res.append(x)
+
+        x, _ = self.memory(x)
+
+        res = res[::-1]
+        x = self.dec['dec0'](x)
+        for i in range(self.num_blocks - 1):
+            x = self.fuse['fuse{}'.format(i)](x, res[i + 1])
+            x = self.dec['dec{}'.format(i + 1)](x)
+        x = xi - x
+
+        return feature
+
                  
          
 
