@@ -222,7 +222,58 @@ class DerainNet(nn.Module):
 
         return feature
 
-                 
-         
+
+class Discriminator(nn.Module):
+    def __init__(self, num_blocks=5, in_chs=16, num_layers=4, delta_chs=16, num_scales=4):
+        super(Discriminator, self).__init__()
+
+        self.num_blocks = num_blocks  # 5
+        self.num_scales = num_scales
+
+        self.head = nn.Conv2d(3, in_chs, 3, 1, 1, bias=False)
+        self.enc = nn.ModuleDict()
+        self.fc = nn.ModuleDict()
+        for i in range(num_blocks+1):
+            out_chs = in_chs + delta_chs
+            self.enc['enc{}'.format(i)] = make_layer(_Residual_Block, num_layers, in_chs, out_chs,
+                                                     downsample=i <= num_scales)
+            in_chs += delta_chs
+
+        self.fc = nn.Sequential(
+                                nn.Linear(in_features=1792, out_features=256, bias=False),
+                                nn.BatchNorm1d(256),
+                                nn.LeakyReLU(inplace=True),  # hidden layer
+                                nn.Linear(in_features=256, out_features=64, bias=False),
+                                )
+        self.projecthead = nn.Sequential(nn.Linear(in_features=64, out_features=64, bias=False),
+                                        nn.BatchNorm1d(64),
+                                        nn.LeakyReLU(inplace=True), # hidden layer
+                                        nn.Linear(64, 2),) # output layer
+        self.normal = nn.Softmax(dim=1)
+
+        # # build a 2-layer predictor
+        # self.predictor = nn.Sequential(nn.Linear(in_features=64, out_features=256, bias=False),
+        #                                 nn.BatchNorm1d(256),
+        #                                 nn.LeakyReLU(inplace=True), # hidden layer
+        #                                 nn.Linear(256, 64)) # output layer
+
+
+    def forward(self, x):
+        x = self.head(x)
+        fea = []
+        # fea.append(x)
+        for i in range(self.num_blocks+1):
+            x = self.enc['enc{}'.format(i)](x)
+            fea.append(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+
+        out0_Vector = self.normal(x)    # Feature Vector
+
+        out1_classfier = self.projecthead(x)  # 2 classfier
+        # out2_predictor = self.predictor(x)    # simsiam
+
+        return out0_Vector, out1_classfier, fea
+
 
 

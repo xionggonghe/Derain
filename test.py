@@ -19,6 +19,7 @@ if __name__ == '__main__':
     model.load_state_dict(save['state_dict'])
     print(model)
     test_dir = "./dataset/rain_data_test_Light/"
+    # "./dataset/rain_data_test_Heavy/rain_heavy_test/"
     inp_fileList, tar_fileList = DataLoader_Test(test_dir)
     SSIM_loss = SSIM()
     PSNR_TEST = 0.0
@@ -26,7 +27,8 @@ if __name__ == '__main__':
     show = ToPILImage()  # 可以把Tensor转成Image，方便可视化
 
     model.eval()
-    for i in range(5): #len(inp_fileList)
+    for i in range(7, 8): #len(inp_fileList)
+        print("i: ", i)
         index = i+1
         inp_img = Image.open(inp_fileList[index])
         inp_img = ImageOps.exif_transpose(inp_img)  # 恢复正常角度的图像
@@ -46,15 +48,15 @@ if __name__ == '__main__':
         # target = torch.squeeze(target)
 
 
-        print("psnr: ", PSNR(restored, target))
-        print("ssim: ", SSIM_loss(restored, target))
+        # print("psnr: ", PSNR(restored, target))
+        # print("ssim: ", SSIM_loss(restored, target))
         PSNR_TEST += PSNR(restored, target)
         SSIM_TEST += SSIM_loss(restored, target)
 
         show(torch.squeeze(input_, dim=0)).show()
         show(torch.squeeze(restored, dim=0)).show()
         show(torch.squeeze(target, dim=0)).show()
-        print("pic1")
+        # print("pic1")
 
     PSNR_TEST /= (i+1)
     SSIM_TEST /= (i+1)
